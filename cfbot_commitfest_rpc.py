@@ -92,9 +92,7 @@ def get_submissions_for_commitfest(commitfest_id):
   result = []
   parser = HTMLParser()
   url = "https://commitfest.postgresql.org/%s/" % (commitfest_id,)
-  next_line_has_version = False
-  next_line_has_authors = False
-  next_line_has_latest_email = False
+  next_line = None
   state = None
   latest_email = None
   authors = ""
@@ -103,19 +101,20 @@ def get_submissions_for_commitfest(commitfest_id):
     if groups:
       submission_id = groups.group(1)
       name = parser.unescape(groups.group(2))
-    if next_line_has_version:
-      next_line_has_version = False
-      next_line_has_authors = True
+    if next_line == 'version':
+      next_line = 'authors'
       continue
-    if next_line_has_authors:
-      next_line_has_authors = False
+
+    if next_line == 'authors':
+      next_line = 'reviewers'
       groups = re.search("<td>([^<]*)</td>", line)
       if groups:
         authors = groups.group(1)
         authors = re.sub(" *\\([^)]*\\)", "", authors)
         continue
-    if next_line_has_latest_email:
-      next_line_has_latest_email = False
+
+    if next_line == 'latest_email':
+      next_line = None
       groups = re.search('<td style="white-space: nowrap;">(.*)<br/>(.*)</td>', line)
       if groups:
         latest_email = groups.group(1) + " " + groups.group(2)
@@ -125,14 +124,13 @@ def get_submissions_for_commitfest(commitfest_id):
     groups = re.search('<td><span class="label label-[^"]*">([^<]+)</span></td>', line)
     if groups:
       state = groups.group(1)
-      next_line_has_version = True
+      next_line = 'version'
       continue
     groups = re.search('<td style="white-space: nowrap;">.*<br/>.*</td>', line)
     if groups:
-      next_line_has_latest_email = True
+      next_line = 'latest_email'
       continue
-    next_line_has_authors = False
-    next_line_has_latest_email = False
+    next_line = None
   return result
 
 def get_current_commitfest_id():
