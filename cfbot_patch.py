@@ -161,6 +161,7 @@ def update_submission(conn, message_id, commit_id, commitfest_id, submission_id)
                      WHERE commitfest_id = %s AND submission_id = %s""",
                  (message_id, message_id, commit_id, commitfest_id, submission_id))
   
+
 def process_submission(conn, **kwargs):
   commitfest_id = kwargs['commitfest_id']
   submission_id = kwargs['submission_id']
@@ -168,12 +169,11 @@ def process_submission(conn, **kwargs):
   thread_url = cfbot_commitfest_rpc.get_thread_url_for_submission(commitfest_id, submission_id)
   if not thread_url:
     # CF entry with no thread attached?
-    update_submission(conn, None, None, commitfest_id, submission_id)
-    conn.commit()
     logging.info("skipping submission %s with no thread" % submission_id)
     return
 
   logging.info("processing submission %d, %d" % (commitfest_id, submission_id))
+
   template_repo_path = 'postgresql.cfbot'
   update_patchbase_tree(template_repo_path)
   if os.path.exists(template_repo_path):
@@ -189,6 +189,7 @@ def process_submission(conn, **kwargs):
 
   # Retrieve and apply all the attachments
   rcode = 0
+
   message_id, patch_urls = cfbot_commitfest_rpc.get_latest_patches_from_thread_url(thread_url)
   # write the patch output XXX to a public log file
   #log_file = "patch_%d_%d.log" % (commitfest_id, submission_id)
@@ -269,6 +270,7 @@ def process_submission(conn, **kwargs):
   else:
     # we applied (and maybe committed) the patches; now put an informational commit on top
     make_branch(conn, patch_dir, **kwargs, message_id=message_id, base_branch=commit_id)
+
     # push it to the remote monitored repo, if configured
     if cfbot_config.GIT_REMOTE_NAME:
       logging.info("pushing branch %s" % branch)
@@ -276,15 +278,6 @@ def process_submission(conn, **kwargs):
       my_env["GIT_SSH_COMMAND"] = cfbot_config.GIT_SSH_COMMAND
       subprocess.check_call('git push -q -f'.split() + [cfbot_config.GIT_REMOTE_NAME, branch], env=my_env, cwd=patch_dir)
     return True
-  # record that we have processed this commit ID and message ID
-  #
-  # Unfortunately we also have to clobber last_message_id to avoid getting
-  # stuck in a loop, because sometimes the commitfest app reports a change
-  # in last email date before the new email is visible in the flat thread (!),
-  # which means that we can miss a new patch.  Doh.  Need something better
-  # here (don't really want to go back to polling threads aggressively...)
-  update_submission(conn, message_id, commit_id, commitfest_id, submission_id)
-  conn.commit()
 
 def maybe_process_one(conn):
   if not need_to_limit_rate(conn):
