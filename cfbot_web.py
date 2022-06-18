@@ -204,6 +204,9 @@ def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activ
         padding: 1rem 1rem 1rem 0;
         border-bottom: solid 1px rgba(0,0,0,.2);
       }
+      a.noul {
+        text-decoration: none;
+      }
     </style>
   </head>
   <body>
@@ -289,8 +292,8 @@ def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activ
       # construct email link
       patch_html = ""
       if submission.last_branch_message_id:
-        patch_html = """<a title="Patch email" href="https://www.postgresql.org/message-id/%s">\u2709</a>""" % submission.last_branch_message_id
-      patch_html += """ <a title="Test history" href="https://cirrus-ci.com/github/postgresql-cfbot/postgresql/commitfest/%s/%s">H</a>""" % (submission.commitfest_id, submission.id)
+        patch_html = """<a class=noul title="Patch email" href="https://www.postgresql.org/message-id/%s">\u2709</a>""" % submission.last_branch_message_id
+      patch_html += """ <a class=noul title="Test history" href="https://cirrus-ci.com/github/postgresql-cfbot/postgresql/commitfest/%s/%s">H</a>""" % (submission.commitfest_id, submission.submission_id)
 
       # write out an entry
       f.write("""
