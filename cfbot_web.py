@@ -96,7 +96,7 @@ def load_submissions(conn, commitfest_id):
                              WHEN 'Needs review' THEN 1
                              ELSE 2
                            END,
-                           s.name""",
+                           s.submission_id""",
                   (commitfest_id,))
   for commitfest_id, submission_id, name, authors, status, last_branch_message_id in cursor.fetchall():
     submission = Submission(submission_id, commitfest_id, name, status, authors, None)
