@@ -259,6 +259,9 @@ def build_page(conn, submissions, path, **kwargs):
       for author in all_authors(submission):
         author_links.append("""<a href="%s">%s</a>""" % (make_author_url(author), submission.authors[author]))
 
+      if submission.committer:
+        author_links.append("""<a style="text-decoration: dashed underline;" title=committer href="%s">{%s}</a>""" % (make_author_url(submission.committer), submission.committer))
+
       author_links_string = ", ".join(author_links)
 
       # construct build results
@@ -302,8 +305,18 @@ def build_page(conn, submissions, path, **kwargs):
       # construct email link
       patch_html = ""
       if submission.last_branch_message_id:
-        patch_html = """<a class=noul title="Patch email" href="https://www.postgresql.org/message-id/%s">\u2709</a>""" % submission.last_branch_message_id
+        patch_html += """<a class=noul title="Patch email" href="https://www.postgresql.org/message-id/%s">\u2709</a>""" % submission.last_branch_message_id
       patch_html += """ <a class=noul title="Test history" href="https://cirrus-ci.com/github/postgresql-cfbot/postgresql/commitfest/%s/%s">H</a>""" % (submission.commitfest_id, submission.submission_id)
+
+      if submission.committer:
+        patch_html += """&nbsp;<span title="%s (%s)">C</span>\n""" % (usermap.get(submission.committer), submission.committer)
+      if len(submission.reviewers) == 0:
+        patch_html += """&nbsp;<span title="No reviewers">Z</span>\n"""
+
+      if filterdict.get('author') in submission.reviewers:
+        patch_html += """&nbsp;<span title="Reviewer">R</span>\n"""
+      if submission.version:
+        patch_html += """&nbsp;<span style="background: #bbbbbb;" title="Target release">%s</span>\n""" % submission.version
 
       # write out an entry
       f.write("""
