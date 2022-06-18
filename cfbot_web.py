@@ -150,10 +150,11 @@ def load_submissions(conn, commitfest_id):
 
 def rebuild(conn, commitfest_id):
   submissions = load_submissions(conn, commitfest_id)
-  build_page(conn, "x", commitfest_id, submissions, None, None, os.path.join(cfbot_config.WEB_ROOT, "index.html"))
-  build_page(conn, "x", commitfest_id + 1, submissions, None, None, os.path.join(cfbot_config.WEB_ROOT, "next.html"))
+
+  build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "index.html"), filterdict=dict(commitfest_id=commitfest_id))
+  build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "next.html"), filterdict=dict(commitfest_id=1+commitfest_id))
   for author in unique_authors(submissions):
-    build_page(conn, "x", None, submissions, author, None, os.path.join(cfbot_config.WEB_ROOT, make_author_url(author)))
+    build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, make_author_url(author)), filterdict=dict(author=author))
 
 def make_author_url(author):
     text = author.strip()
@@ -169,14 +170,14 @@ def make_author_url(author):
 def all_authors(submission):
   return submission.authors.keys()
  
-def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activity_message, path):
+def build_page(conn, submissions, path, **kwargs):
   """Build a web page that lists all known entries and shows the badges."""
+
+  filterdict = kwargs.get('filterdict', {})
 
   expected_runtimes = load_expected_runtimes(conn)
   last_status = None
-  commitfest_id_for_link = commitfest_id
-  if commitfest_id_for_link == None:
-    commitfest_id_for_link = ""
+  commitfest_id_for_link = filterdict.get('commitfest_id', '')
   with open(path + ".tmp", "w") as f:
     f.write("""<html>
   <head>
@@ -228,11 +229,11 @@ def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activ
     for submission in submissions:
 
       # skip if we need to filter by commitfest
-      if commitfest_id != None and submission.commitfest_id != commitfest_id:
+      if 'commitfest_id' in filterdict and submission.commitfest_id != filterdict['commitfest_id']:
         continue
 
       # skip if we need to filter by author
-      if filter_author != None and filter_author not in all_authors(submission):
+      if 'author' in filterdict and filterdict['author'] not in all_authors(submission):
         continue
 
       # create a new heading row if this is a new CF status
@@ -324,4 +325,4 @@ if __name__ == "__main__":
     #rebuild(conn, commitfest_id)
     #commitfest_id = cfbot_commitfest_rpc.get_current_commitfest_id()
     submissions = load_submissions(conn, 37)
-    build_page(conn, "x", 37, submissions, None, None, os.path.join(cfbot_config.WEB_ROOT, "index2.html"))
+    build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "index2.html"), filterdict=dict(commitfest_id=37))
