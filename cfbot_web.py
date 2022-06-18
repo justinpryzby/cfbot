@@ -263,7 +263,7 @@ def build_page(conn, submissions, path, **kwargs):
       if submission.committer:
         author_links.append("""<a style="text-decoration: dashed underline;" title=committer href="%s">{%s}</a>""" % (make_author_url(submission.committer), submission.committer))
 
-      author_links_string = ", ".join(author_links)
+      submission.author_links_string = ", ".join(author_links)
 
       # construct build results
       build_results = ""
@@ -325,12 +325,12 @@ def build_page(conn, submissions, path, **kwargs):
       # write out an entry
       f.write("""
       <tr>
-        <td width="10%%">%s/%s</td>
-        <td width="45%%"><a href="https://commitfest.postgresql.org/%s/%s/">%s</a></td>
-        <td width="20%%">%s</td>
-        <td width="5%%" align="right">%s</td>
-        <td width="20%%">%s</td>
-""" % (submission.commitfest_id, submission.submission_id, submission.commitfest_id, submission.submission_id, name, author_links_string, patch_html, build_results))
+        <td width="10%%">%(commitfest_id)s/%(submission_id)s</td>
+        <td width="45%%"><a href="https://commitfest.postgresql.org/%(commitfest_id)s/%(submission_id)s/">%(name)s</a></td>
+        <td width="20%%">%(author_links_string)s</td>
+        <td width="5%%" align="right">%(patch_html)s</td>
+        <td width="20%%">%(build_results)s</td>
+""" % dict(submission.__dict__, patch_html=patch_html, name=name, build_results=build_results))
       f.write("      </tr>\n")
     f.write("""
     </table>
