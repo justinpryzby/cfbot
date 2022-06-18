@@ -264,7 +264,7 @@ def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activ
             html = NEW_FAILURE
           else:
             html = OLD_FAILURE
-        elif build_result.status in ("CREATED"):
+        elif build_result.status in ["CREATED"]:
             html = WAITING_TO_START
         else:
           # hocus pocus time prediction
