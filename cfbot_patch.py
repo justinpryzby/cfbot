@@ -150,9 +150,8 @@ def patchburner_ctl(command, want_rcode=False):
   """Invoke the patchburner control script."""
   if want_rcode:
     p = subprocess.Popen("""%s %s""" % (cfbot_config.PATCHBURNER_CTL, command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output = p.stdout.read().decode('utf-8')
-    rcode = p.wait()
-    return output, rcode
+    stdout, stderr = p.communicate()
+    return stdout.decode('utf-8'), p.returncode
   else:
     return subprocess.check_output("%s %s" % (cfbot_config.PATCHBURNER_CTL, command), shell=True).decode('utf-8')
 
