@@ -183,6 +183,7 @@ def process_submission(conn, **kwargs):
 
   commit_id = get_commit_id(template_repo_path)
   patch_dir = os.path.join(template_repo_path, str(commitfest_id), str(submission_id))
+  print('dir', patch_dir)
   os.makedirs(patch_dir, exist_ok=True)
 # XXX tmpfile
 
@@ -236,6 +237,7 @@ def process_submission(conn, **kwargs):
         p = subprocess.Popen(cmd + [os.path.join(str(commitfest_id), str(submission_id), './patch')], cwd=template_repo_path, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout , stderr = p.communicate()
         log.write(stdout.decode())
+        print(stdout.decode())
         rcode = p.returncode
 
         # Do not commit: the cfbot banner message will be committed later.
@@ -255,6 +257,7 @@ def process_submission(conn, **kwargs):
         p = subprocess.Popen(cmd + [os.path.basename(filename)], cwd=patch_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout , stderr = p.communicate()
         log.write(stdout.decode())
+        print(stdout.decode())
         rcode = p.returncode
 
       if rcode != 0:
@@ -302,7 +305,7 @@ if __name__ == "__main__":
     #maybe_process_one(conn)
     import cfbot_commitfest_rpc
     fooddb = cfbot_commitfest_rpc.foodb()
-    process_submission(foodb, commitfest_id=19, submission_id=1769)
+    process_submission(None, commitfest_id=19, submission_id=1769)
     #process_submission(foodb, 19, 1769) # does not apply
     #process_submission(foodb, 38, 3256) # git format with multiple patches
     process_submission(None, commitfest_id=38, submission_id=3633) # raw patch
