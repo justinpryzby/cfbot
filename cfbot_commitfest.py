@@ -11,6 +11,7 @@ def pull_submissions(conn, commitfest_id):
   """Fetch the list of submissions and make sure we have a row for each one.
      Update the last email time according to the Commitfest main page,
      as well as name, status, authors in case they changed."""
+  return cfbot_commitfest_rpc.get_submissions_for_commitfest(commitfest_id)
   cursor = conn.cursor()
   for submission in cfbot_commitfest_rpc.get_submissions_for_commitfest(commitfest_id):
     # avoid writing for nothing by doing a read query first
@@ -77,7 +78,6 @@ if __name__ == "__main__":
     import cfbot_commitfest_rpc
     conn = cfbot_commitfest_rpc.foodb()
     commitfest_id = cfbot_commitfest_rpc.get_current_commitfest_id()
-    pull_submissions(conn, commitfest_id)
-    pull_submissions(conn, commitfest_id + 1)
-    pull_modified_threads(conn)
-    push_build_results(conn)
+    x = pull_submissions(None, commitfest_id)
+    x += pull_submissions(None, commitfest_id + 1)
+    print('x',x)
