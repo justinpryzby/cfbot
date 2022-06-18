@@ -74,7 +74,8 @@ def push_build_results(conn):
   pass
 
 if __name__ == "__main__":
-  with cfbot_util.db() as conn:
+    import cfbot_commitfest_rpc
+    conn = cfbot_commitfest_rpc.foodb()
     commitfest_id = cfbot_commitfest_rpc.get_current_commitfest_id()
     pull_submissions(conn, commitfest_id)
     pull_submissions(conn, commitfest_id + 1)

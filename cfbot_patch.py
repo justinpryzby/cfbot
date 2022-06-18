@@ -170,7 +170,9 @@ def update_submission(conn, message_id, commit_id, commitfest_id, submission_id)
                      WHERE commitfest_id = %s AND submission_id = %s""",
                  (message_id, message_id, commit_id, commitfest_id, submission_id))
   
-def process_submission(conn, commitfest_id, submission_id):
+def process_submission(conn, **kwargs):
+  commitfest_id = kwargs['commitfest_id']
+  submission_id = kwargs['submission_id']
   cursor = conn.cursor()
   template_repo_path = patchburner_ctl("template-repo-path").strip()
   burner_repo_path = patchburner_ctl("burner-repo-path").strip()
@@ -241,9 +243,10 @@ def maybe_process_one(conn):
   if not need_to_limit_rate(conn):
     commitfest_id, submission_id = choose_submission(conn)
     if submission_id:
-      process_submission(conn, commitfest_id, submission_id)
+      process_submission(conn, commitfest_id=commitfest_id, submission_id=submission_id)
  
+
 if __name__ == "__main__":
-  with cfbot_util.db() as conn:
     #maybe_process_one(conn)
-    process_submission(conn, 19, 1769)
+    import cfbot_commitfest_rpc
+    process_submission(cfbot_commitfest_rpc.foodb(), commitfest_id=19, submission_id=1769)

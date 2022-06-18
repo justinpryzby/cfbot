@@ -6,7 +6,7 @@
 import cfbot_util
 import datetime
 import errno
-from html.parser import HTMLParser
+from HTMLParser import HTMLParser
 import os
 import re
 import requests
@@ -158,6 +158,8 @@ def get_submissions_for_commitfest(commitfest_id):
       next_line = 'latest_email'
       continue
     next_line = None
+
+  result.sort(key = lambda x: x.name)
   return result
 
 def get_current_commitfest_id():
@@ -173,8 +175,29 @@ def get_current_commitfest_id():
     raise Exception("Could not determine the current Commitfest ID")
   return result
 
+class foocursor(object):
+  def execute(self, *args):
+     pass
+  def fetchone(self, *args):
+     pass
+  def __iter__(self, *args):
+     return self
+  def __next__(self, *args):
+     raise StopIteration
+
+class foodb(object):
+  def cursor(self, *args):
+    return foocursor()
+  def commit(self, *args):
+     pass
+
 if __name__ == "__main__":
-  #for sub in get_submissions_for_commitfest(get_current_commitfest_id()):
-  #  print str(sub)
+  for sub in get_submissions_for_commitfest(get_current_commitfest_id()):
+    print (str(sub))
+    import cfbot_patch
+    print('sub', sub.__dict__)
+    dic = dict(sub.__dict__, authors=', '.join(sub.__dict__['authors']))
+    cfbot_patch.process_submission(foodb(), **dic)
+
   #print get_thread_url_for_submission(19, 1787)
-  print(get_latest_patches_from_thread_url(get_thread_url_for_submission(37, 2901)))
+  #print(get_latest_patches_from_thread_url(get_thread_url_for_submission(37, 2901)))

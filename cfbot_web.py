@@ -149,7 +149,8 @@ def load_submissions(conn, commitfest_id):
   return results
 
 def rebuild(conn, commitfest_id):
-  submissions = load_submissions(conn, commitfest_id)
+  submissions = cfbot_commitfest_rpc.get_submissions_for_commitfest(commitfest_id)
+  submissions.sort(key=lambda i: i.status)
 
   build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "index.html"), filterdict=dict(commitfest_id=commitfest_id))
   build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "next.html"), filterdict=dict(commitfest_id=1+commitfest_id))
@@ -176,8 +177,8 @@ def build_page(conn, submissions, path, **kwargs):
 
   filterdict = kwargs.get('filterdict', {})
 
-  expected_runtimes = load_expected_runtimes(conn)
   last_status = None
+  expected_runtimes = dict()
   usermap = {k:v for i in submissions for k,v in i.__dict__['authors'].items()}
   commitfest_id_for_link = filterdict.get('commitfest_id', '')
   with open(path + ".tmp", "w") as f:
@@ -266,7 +267,8 @@ def build_page(conn, submissions, path, **kwargs):
 
       # construct build results
       build_results = ""
-      for build_result in submission.build_results:
+
+      for build_result in [BuildResult('foo', '', 'url', 'recent', 'change', 'only', 0)]:
         alt = build_result.task_name + ": " + build_result.status
         if build_result.status == "COMPLETED":
           if build_result.new:
@@ -296,7 +298,8 @@ def build_page(conn, submissions, path, **kwargs):
             fraction = 0.1
           if fraction >= 0.9:
             fraction = 0.9
-          html = building(fraction)
+          import random
+          html = building(random.random())
         html = html % alt
         if build_result.url:
           html = """<a href="%s">%s</a>""" % (build_result.url, html)
@@ -304,7 +307,8 @@ def build_page(conn, submissions, path, **kwargs):
 
       # construct email link
       patch_html = ""
-      if submission.last_branch_message_id:
+      submission.last_branch_message_id = 'foo'
+      if getattr(submission,'last_branch_message_id',None):
         patch_html += """<a class=noul title="Patch email" href="https://www.postgresql.org/message-id/%s">\u2709</a>""" % submission.last_branch_message_id
       patch_html += """ <a class=noul title="Test history" href="https://cirrus-ci.com/github/postgresql-cfbot/postgresql/commitfest/%s/%s">H</a>""" % (submission.commitfest_id, submission.submission_id)
 
@@ -342,8 +346,12 @@ def unique_authors(submissions):
   return list(set(results))
 
 if __name__ == "__main__":
-  with cfbot_util.db() as conn:
-    #rebuild(conn, commitfest_id)
-    #commitfest_id = cfbot_commitfest_rpc.get_current_commitfest_id()
-    submissions = load_submissions(conn, 37)
-    build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "index2.html"), filterdict=dict(commitfest_id=37))
+    conn = cfbot_commitfest_rpc.foodb()
+    commitfest_id = cfbot_commitfest_rpc.get_current_commitfest_id()
+    rebuild(conn, commitfest_id)
+
+    #submissions = load_submissions(conn, 37)
+    #submissions = cfbot_commitfest_rpc.get_submissions_for_commitfest(commitfest_id)
+    #submissions.sort(key=lambda i: i.status)
+    #print('subs', submissions)
+    #build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "index2.html"), filterdict=dict(commitfest_id=37))
