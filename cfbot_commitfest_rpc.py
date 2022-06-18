@@ -21,17 +21,15 @@ from urllib.parse import urlparse
 class Submission:
   """A submission in a Commitfest."""
 
-  def __init__(self, submission_id, commitfest_id, name, status, authors, last_email_time):
-    self.id = int(submission_id)
-    self.commitfest_id = commitfest_id
-    self.name = name
-    self.status = status
-    self.authors = authors
-    self.last_email_time = last_email_time
+  submission_id = name = status = authors = last_email_time = None
+  def __init__(self, **kwargs):
     self.build_results = []
 
+    for k,v in kwargs.items():
+      setattr(self,k,v)
+
   def __str__(self):
-    return str([self.id, self.name, self.status, self.authors, self.last_email_time])
+    return str([self.submission_id, self.name, self.status, self.authors, self.last_email_time])
 
 def get_latest_patches_from_thread_url(thread_url):
   """Given a 'whole thread' URL from the archives, find the last message that
@@ -93,14 +91,12 @@ def get_submissions_for_commitfest(commitfest_id):
   parser = HTMLParser()
   url = "https://commitfest.postgresql.org/%s/" % (commitfest_id,)
   next_line = None
-  state = None
-  latest_email = None
-  authors = ""
+  dic = dict(commitfest_id=int(commitfest_id), latest_email=None, authors="")
   for line in cfbot_util.slow_fetch(url).splitlines():
     groups = re.search('\<a href="([0-9]+)/"\>([^<]+)</a>', line)
     if groups:
-      submission_id = groups.group(1)
-      name = parser.unescape(groups.group(2))
+      dic['submission_id'] = int(groups.group(1))
+      dic['name'] = parser.unescape(groups.group(2))
     if next_line == 'version':
       next_line = 'authors'
       continue
@@ -111,6 +107,7 @@ def get_submissions_for_commitfest(commitfest_id):
       if groups:
         authors = groups.group(1)
         authors = re.sub(" *\\([^)]*\\)", "", authors)
+        dic['authors'] = authors.split(', ')
         continue
 
     if next_line == 'latest_email':
@@ -118,12 +115,13 @@ def get_submissions_for_commitfest(commitfest_id):
       groups = re.search('<td style="white-space: nowrap;">(.*)<br/>(.*)</td>', line)
       if groups:
         latest_email = groups.group(1) + " " + groups.group(2)
-        if latest_email == ' ':
+        if not latest_email.strip():
           latest_email = None
-        result.append(Submission(submission_id, commitfest_id, name, state, authors.split(", "), latest_email))
+        dic['last_email_time'] = latest_email
+        result.append(Submission(**dic))
     groups = re.search('<td><span class="label label-[^"]*">([^<]+)</span></td>', line)
     if groups:
-      state = groups.group(1)
+      dic['status'] = groups.group(1)
       next_line = 'version'
       continue
     groups = re.search('<td style="white-space: nowrap;">.*<br/>.*</td>', line)

@@ -99,7 +99,7 @@ def load_submissions(conn, commitfest_id):
                            s.submission_id""",
                   (commitfest_id,))
   for commitfest_id, submission_id, name, authors, status, last_branch_message_id in cursor.fetchall():
-    submission = Submission(submission_id, commitfest_id, name, status, authors, None)
+    submission = Submission(commitfest_id=commitfest_id, submission_id=submission_id, name=name, status=status, authors=authors)
     submission.last_branch_message_id = last_branch_message_id
     results.append(submission)
 
@@ -303,7 +303,7 @@ def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activ
         <td width="20%%">%s</td>
         <td width="5%%" align="right">%s</td>
         <td width="20%%">%s</td>
-""" % (submission.commitfest_id, submission.id, submission.commitfest_id, submission.id, name, author_links_string, patch_html, build_results))
+""" % (submission.commitfest_id, submission.submission_id, submission.commitfest_id, submission.submission_id, name, author_links_string, patch_html, build_results))
       f.write("      </tr>\n")
     f.write("""
     </table>

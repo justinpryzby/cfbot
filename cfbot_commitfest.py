@@ -22,7 +22,7 @@ def pull_submissions(conn, commitfest_id):
                          AND status = %s
                          AND authors = %s
                          AND last_email_time = %s AT TIME ZONE 'UTC'""",
-                   (commitfest_id, submission.id,
+                   (commitfest_id, submission.submission_id,
                     submission.name, submission.status, submission.authors, submission.last_email_time))
     if cursor.fetchone():
       # no change required
@@ -37,7 +37,7 @@ def pull_submissions(conn, commitfest_id):
                           status = EXCLUDED.status,
                           authors = EXCLUDED.authors,
                           last_email_time = EXCLUDED.last_email_time""",
-                   (commitfest_id, submission.id,
+                   (commitfest_id, submission.submission_id,
                     submission.name, submission.status, submission.authors, submission.last_email_time))
     conn.commit()
 
