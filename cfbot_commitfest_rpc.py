@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 class Submission:
   """A submission in a Commitfest."""
 
-  submission_id = name = status = authors = last_email_time = None
+  submission_id = name = status = authors = last_email_time = version = None
   def __init__(self, **kwargs):
     self.build_results = []
 
@@ -29,7 +29,7 @@ class Submission:
       setattr(self,k,v)
 
   def __str__(self):
-    return str([self.submission_id, self.name, self.status, self.authors, self.last_email_time])
+    return str([self.submission_id, self.name, self.status, self.authors, self.last_email_time, self.version])
 
 def get_latest_patches_from_thread_url(thread_url):
   """Given a 'whole thread' URL from the archives, find the last message that
@@ -116,12 +116,28 @@ def get_submissions_for_commitfest(commitfest_id):
       dic['name'] = parser.unescape(groups.group(2))
     if next_line == 'version':
       next_line = 'authors'
+      groups = re.search("<td><span [^>]*>([^<]*)</span></td>", line)
+      version = None
+      if groups:
+        dic['version'] = groups.group(1)
       continue
 
     if next_line == 'authors':
       next_line = 'reviewers'
       dic['authors'] = parse_authors(line)
       continue
+
+    if next_line == 'reviewers':
+      next_line = 'committer'
+      dic['reviewers'] = parse_authors(line)
+      continue
+
+    if next_line == 'committer':
+      next_line = None # XXX numCFs
+      groups = re.search("<td>([^<]*)</td>", line)
+      if groups:
+        dic['committer'] = groups.group(1)
+        continue
 
     if next_line == 'latest_email':
       next_line = None
