@@ -265,9 +265,7 @@ def process_submission(conn, **kwargs):
 
   # did "patch" actually succeed?
   if rcode != 0:
-    # we failed to apply the patches
-    cursor.execute("""INSERT INTO branch (commitfest_id, submission_id, status, url, created, modified) VALUES (%s, %s, 'failed', %s, now(), now())""",
-                   (commitfest_id, submission_id, log_url))
+    print('we failed to apply the patches: ...', commitfest_id, submission_id)
   else:
     # we applied (and maybe committed) the patches; now put an informational commit on top
     make_branch(conn, patch_dir, **kwargs, message_id=message_id, base_branch=commit_id)
@@ -278,10 +276,6 @@ def process_submission(conn, **kwargs):
       my_env["GIT_SSH_COMMAND"] = cfbot_config.GIT_SSH_COMMAND
       subprocess.check_call('git push -q -f'.split() + [cfbot_config.GIT_REMOTE_NAME, branch], env=my_env, cwd=patch_dir)
     return True
-    # record the apply status
-    ci_commit_id = get_commit_id(burner_repo_path)
-    cursor.execute("""INSERT INTO branch (commitfest_id, submission_id, commit_id, status, url, created, modified) VALUES (%s, %s, %s, 'testing', %s, now(), now())""",
-                   (commitfest_id, submission_id, ci_commit_id, log_url))
   # record that we have processed this commit ID and message ID
   #
   # Unfortunately we also have to clobber last_message_id to avoid getting
