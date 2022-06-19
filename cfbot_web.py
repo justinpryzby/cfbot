@@ -154,7 +154,8 @@ def rebuild(conn, commitfest_id):
   build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "index.html"), filterdict=dict(commitfest_id=commitfest_id))
   build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, "next.html"), filterdict=dict(commitfest_id=1+commitfest_id))
   for author in unique_authors(submissions):
-    build_page(conn, submissions, os.path.join(cfbot_config.WEB_ROOT, make_author_url(author)), filterdict=dict(author=author))
+    # Put the reviewed patches together, following nonreviewed (authored) patches
+    build_page(conn, sorted(submissions, key = lambda x: (x.status, author in x.reviewers)), os.path.join(cfbot_config.WEB_ROOT, make_author_url(author)), filterdict=dict(author=author))
 
 def make_author_url(author):
     text = author.strip()
@@ -177,6 +178,7 @@ def build_page(conn, submissions, path, **kwargs):
 
   expected_runtimes = load_expected_runtimes(conn)
   last_status = None
+  usermap = {k:v for i in submissions for k,v in i.__dict__['authors'].items()}
   commitfest_id_for_link = filterdict.get('commitfest_id', '')
   with open(path + ".tmp", "w") as f:
     f.write("""<html>
@@ -233,14 +235,20 @@ def build_page(conn, submissions, path, **kwargs):
         continue
 
       # skip if we need to filter by author
-      if 'author' in filterdict and filterdict['author'] not in all_authors(submission):
-        continue
+      if 'author' in filterdict:
+        if filterdict['author'] not in submission.authors and \
+           filterdict['author'] not in submission.reviewers and \
+           filterdict['author'] != usermap.get(submission.committer):
+          continue
 
       # create a new heading row if this is a new CF status
-      status = submission.status
-      if last_status == None or last_status != status:
-        f.write("""      <tr><td colspan="5"><h2>%s</h2></td></tr>\n""" % status)
-        last_status = status
+      is_reviewer = 'author' in filterdict and filterdict['author'] in submission.reviewers
+      is_committer = 'author' in filterdict and filterdict['author'] == usermap.get(submission.committer)
+      new_status =  (submission.status, is_reviewer, is_committer)
+      if last_status == None or last_status != new_status:
+        statusmsg = "%s  (Committer)" % submission.status if is_committer else "%s  (Reviewer)" % submission.status if is_reviewer else submission.status
+        f.write("""      <tr><td colspan="5"><h2>%s</h2></td></tr>\n""" % statusmsg)
+        last_status = new_status
 
       name = submission.name
       if len(name) > 80:
