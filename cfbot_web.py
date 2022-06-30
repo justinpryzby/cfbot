@@ -158,6 +158,11 @@ def rebuild(conn, commitfest_id):
     # Put the reviewed patches together, following nonreviewed (authored) patches
     build_page(conn, sorted(submissions, key = lambda x: (x.status, author in x.reviewers)), os.path.join(cfbot_config.WEB_ROOT, make_author_url(author)), filterdict=dict(author=author))
 
+  unique_reviewers = set([r for s in submissions for r in s.reviewers])
+  for reviewer in unique_reviewers:
+    path = os.path.join(cfbot_config.WEB_ROOT, 'reviewer', make_author_url(reviewer))
+    build_page(conn, submissions, path, filterdict=dict(reviewer=reviewer))
+
 def make_author_url(author):
     text = author.strip()
     #text = str(text, "utf-8")
@@ -241,6 +246,10 @@ def build_page(conn, submissions, path, **kwargs):
            filterdict['author'] not in submission.reviewers and \
            filterdict['author'] != usermap.get(submission.committer):
           continue
+
+      # skip if we need to filter by reviewer
+      if 'reviewer' in filterdict and filterdict['reviewer'] not in submission.reviewers:
+        continue
 
       # create a new heading row if this is a new CF status
       is_reviewer = 'author' in filterdict and filterdict['author'] in submission.reviewers
