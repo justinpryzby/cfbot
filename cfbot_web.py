@@ -167,7 +167,7 @@ def make_author_url(author):
     return text + ".html"
 
 def all_authors(submission):
-  return submission.authors
+  return submission.authors.keys()
  
 def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activity_message, path):
   """Build a web page that lists all known entries and shows the badges."""
@@ -248,7 +248,8 @@ def build_page(conn, commit_id, commitfest_id, submissions, filter_author, activ
       # convert list of authors into links
       author_links = []
       for author in all_authors(submission):
-        author_links.append("""<a href="%s">%s</a>""" % (make_author_url(author), author))
+        author_links.append("""<a href="%s">%s</a>""" % (make_author_url(author), submission.authors[author]))
+
       author_links_string = ", ".join(author_links)
 
       # construct build results

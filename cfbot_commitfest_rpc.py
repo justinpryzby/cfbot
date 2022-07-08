@@ -85,13 +85,30 @@ def get_thread_url_for_submission(commitfest_id, submission_id):
     result = "https://www.postgresql.org/message-id/flat/" + candidates[-1][1]
   return result
   
+AUTHOR_RE = re.compile("(.*) +\\(([^)]*)\\)")
+
+# Parse list of names returning a dict of username => Display Name
+def parse_authors(line):
+  groups = re.search("<td>([^<]*)</td>", line)
+  if not groups:
+    return {}
+
+  ret = {}
+  authors = groups.group(1).split(', ')
+  for au in authors:
+    x = AUTHOR_RE.search(au)
+    if not x:
+      continue
+    ret[x.group(2)] = x.group(1)
+  return ret
+
 def get_submissions_for_commitfest(commitfest_id):
   """Given a Commitfest ID, return a list of Submission objects."""
   result = []
   parser = HTMLParser()
   url = "https://commitfest.postgresql.org/%s/" % (commitfest_id,)
   next_line = None
-  dic = dict(commitfest_id=int(commitfest_id), latest_email=None, authors="")
+  dic = dict(commitfest_id=int(commitfest_id), latest_email=None, authors=None)
   for line in cfbot_util.slow_fetch(url).splitlines():
     groups = re.search('\<a href="([0-9]+)/"\>([^<]+)</a>', line)
     if groups:
@@ -103,12 +120,8 @@ def get_submissions_for_commitfest(commitfest_id):
 
     if next_line == 'authors':
       next_line = 'reviewers'
-      groups = re.search("<td>([^<]*)</td>", line)
-      if groups:
-        authors = groups.group(1)
-        authors = re.sub(" *\\([^)]*\\)", "", authors)
-        dic['authors'] = authors.split(', ')
-        continue
+      dic['authors'] = parse_authors(line)
+      continue
 
     if next_line == 'latest_email':
       next_line = None
